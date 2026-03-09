@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Self Glow 診断 ― あなたの輝きタイプを見つける</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Serif+JP:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c8a840;
+    --gold-light: #e8d090;
+    --gold-pale: #f8f0d8;
+    --dark: #18160f;
+    --dark2: #2a2518;
+    --mid: #5a5040;
+    --light: #9a9080;
+    --pearl: #f8f6f0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--pearl);
+    font-family: 'Noto Serif JP', serif;
+    min-height: 100vh;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(200,168,64,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 100% 100%, rgba(200,168,64,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── スクリーン共通 ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── トップ画面 ── */
+  .hero {
+    text-align: center;
+    padding: 72px 0 56px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    letter-spacing: 0.55em;
+    color: var(--gold);
+    text-transform: uppercase;
+    opacity: 0.8;
+    margin-bottom: 32px;
+  }
+
+  .hero-icon {
+    width: 64px; height: 64px;
+    margin: 0 auto 32px;
+    filter: drop-shadow(0 0 16px rgba(200,168,64,0.4));
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(42px, 8vw, 64px);
+    color: var(--pearl);
+    letter-spacing: 0.05em;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .hero-subtitle {
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 200;
+    font-size: 16px;
+    color: var(--light);
+    letter-spacing: 0.2em;
+    margin-bottom: 40px;
+  }
+
+  .hero-deco {
+    display: flex; align-items: center; justify-content: center;
+    gap: 16px; margin-bottom: 40px;
+  }
+  .hero-deco-bar { width: 48px; height: 0.5px; background: linear-gradient(to right, transparent, var(--gold)); }
+  .hero-deco-bar.r { background: linear-gradient(to left, transparent, var(--gold)); }
+  .hero-deco-dot { width: 4px; height: 4px; background: var(--gold); transform: rotate(45deg); }
+
+  .hero-desc {
+    font-weight: 200;
+    font-size: 15px;
+    color: var(--light);
+    line-height: 2.0;
+    margin-bottom: 8px;
+  }
+  .hero-desc em { font-style: normal; color: var(--gold-light); }
+
+  .hero-meta {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: var(--light);
+    opacity: 0.6;
+    margin-top: 24px;
+    margin-bottom: 48px;
+  }
+
+  /* ── ボタン ── */
+  .btn-start {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 56px;
+    border: 1px solid rgba(200,168,64,0.5);
+    background: rgba(200,168,64,0.08);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 300;
+    font-size: 18px;
+    letter-spacing: 0.3em;
+    color: var(--gold-light);
+  }
+  .btn-start:hover {
+    background: rgba(200,168,64,0.15);
+    border-color: rgba(200,168,64,0.8);
+    transform: translateY(-2px);
+  }
+  .btn-arrow {
+    width: 28px; height: 1px;
+    background: var(--gold);
+    position: relative;
+  }
+  .btn-arrow::after {
+    content: '';
+    position: absolute; right: 0; top: -4px;
+    width: 8px; height: 8px;
+    border-top: 1px solid var(--gold);
+    border-right: 1px solid var(--gold);
+    transform: rotate(45deg);
+  }
+
+  /* ── 進捗バー ── */
+  .progress-wrap {
+    padding: 32px 0 8px;
+  }
+  .progress-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--light);
+    opacity: 0.6;
+    margin-bottom: 10px;
+    text-align: right;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 1px;
+    background: rgba(200,168,64,0.15);
+    position: relative;
+  }
+  .progress-fill {
+    height: 1px;
+    background: linear-gradient(to right, rgba(200,168,64,0.3), var(--gold));
+    transition: width 0.5s ease;
+  }
+
+  /* ── 質問カード ── */
+  .q-card {
+    padding: 48px 0;
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-bottom: 20px;
+  }
+
+  .q-text {
+    font-weight: 300;
+    font-size: clamp(18px, 4vw, 22px);
+    color: var(--pearl);
+    letter-spacing: 0.1em;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 0.5px solid rgba(200,168,64,0.2);
+  }
+
+  .options { display: flex; flex-direction: column; gap: 14px; }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 24px;
+    border: 0.5px solid rgba(200,168,64,0.18);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255,255,255,0.02);
+    text-align: left;
+  }
+  .option:hover {
+    border-color: rgba(200,168,64,0.55);
+    background: rgba(200,168,64,0.06);
+    transform: translateX(4px);
+  }
+  .option.selected {
+    border-color: var(--gold);
+    background: rgba(200,168,64,0.1);
+  }
+
+  .option-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    color: var(--gold);
+    opacity: 0.8;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .option-text {
+    font-weight: 200;
+    font-size: 15px;
+    color: var(--pearl);
+    letter-spacing: 0.05em;
+    line-height: 1.7;
+    opacity: 0.85;
+  }
+
+  /* ── 結果画面 ── */
+  .result-hero {
+    text-align: center;
+    padding: 64px 0 48px;
+    animation: fadeIn 0.7s ease;
+  }
+
+  .result-eyebrow {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
+    letter-spacing: 0.55em;
+    color: var(--gold);
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 24px;
+  }
+
+  .result-type-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    letter-spacing: 0.45em;
+    color: var(--gold-light);
+    margin-bottom: 12px;
+  }
+
+  .result-name {
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 200;
+    font-size: clamp(28px, 6vw, 40px);
+    color: var(--pearl);
+    letter-spacing: 0.18em;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .result-keywords {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    margin-bottom: 40px;
+    opacity: 0.8;
+  }
+
+  .result-divider {
+    display: flex; align-items: center; gap: 16px;
+    margin: 0 auto 40px;
+    max-width: 240px;
+  }
+  .result-divider-bar { flex: 1; height: 0.5px; background: linear-gradient(to right, transparent, var(--gold)); }
+  .result-divider-bar.r { background: linear-gradient(to left, transparent, var(--gold)); }
+  .result-divider-dot { width: 4px; height: 4px; background: var(--gold); transform: rotate(45deg); }
+
+  .result-section {
+    margin-bottom: 40px;
+    padding: 32px;
+    border: 0.5px solid rgba(200,168,64,0.2);
+    border-left: 2px solid var(--gold);
+    border-radius: 0 4px 4px 0;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .result-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.8;
+  }
+
+  .result-section-text {
+    font-weight: 200;
+    font-size: 15px;
+    color: #c8c0b0;
+    line-height: 2.0;
+    letter-spacing: 0.05em;
+  }
+  .result-section-text em { font-style: normal; color: var(--gold-light); }
+
+  /* ── CTAセクション ── */
+  .result-cta {
+    text-align: center;
+    padding: 48px 32px;
+    border: 0.5px solid rgba(200,168,64,0.25);
+    border-radius: 4px;
+    background: rgba(200,168,64,0.04);
+    margin-top: 48px;
+  }
+
+  .result-cta-title {
+    font-weight: 200;
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    color: var(--pearl);
+    margin-bottom: 12px;
+    line-height: 1.7;
+  }
+
+  .result-cta-desc {
+    font-weight: 200;
+    font-size: 14px;
+    color: var(--light);
+    line-height: 2.0;
+    margin-bottom: 32px;
+  }
+
+  .btn-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 48px;
+    border: 1px solid rgba(200,168,64,0.5);
+    background: rgba(200,168,64,0.1);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 300;
+    font-size: 16px;
+    letter-spacing: 0.25em;
+    color: var(--gold-light);
+    text-decoration: none;
+  }
+  .btn-line:hover {
+    background: rgba(200,168,64,0.2);
+    transform: translateY(-2px);
+  }
+
+  .btn-retry {
+    display: block;
+    margin: 20px auto 0;
+    background: none;
+    border: none;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    color: var(--light);
+    opacity: 0.5;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity 0.3s;
+  }
+  .btn-retry:hover { opacity: 0.9; }
+
+  .brand-footer {
+    text-align: center;
+    margin-top: 64px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
+    letter-spacing: 0.5em;
+    color: var(--light);
+    opacity: 0.35;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ══ トップ画面 ══ -->
+  <div id="screen-top" class="screen active">
+    <div class="hero">
+      <div class="hero-eyebrow">Glow Up Academy</div>
+      <svg class="hero-icon" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="9" stroke="#c8a840" stroke-width="0.8" fill="rgba(200,168,64,0.08)"/>
+        <line x1="32" y1="6"  x2="32" y2="18" stroke="#c8a840" stroke-width="0.8" stroke-linecap="round"/>
+        <line x1="32" y1="46" x2="32" y2="58" stroke="#c8a840" stroke-width="0.8" stroke-linecap="round"/>
+        <line x1="6"  y1="32" x2="18" y2="32" stroke="#c8a840" stroke-width="0.8" stroke-linecap="round"/>
+        <line x1="46" y1="32" x2="58" y2="32" stroke="#c8a840" stroke-width="0.8" stroke-linecap="round"/>
+        <line x1="15" y1="15" x2="23" y2="23" stroke="#c8a840" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/>
+        <line x1="41" y1="41" x2="49" y2="49" stroke="#c8a840" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/>
+        <line x1="49" y1="15" x2="41" y2="23" stroke="#c8a840" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/>
+        <line x1="23" y1="41" x2="15" y2="49" stroke="#c8a840" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+      <div class="hero-title">Self Glow</div>
+      <div class="hero-subtitle">あなたの輝きタイプ診断</div>
+      <div class="hero-deco">
+        <div class="hero-deco-bar"></div>
+        <div class="hero-deco-dot"></div>
+        <div class="hero-deco-bar r"></div>
+      </div>
+      <p class="hero-desc">
+        内側から<em>じんわりと光が滲み出るような輝き</em>——<br>
+        それが、あなた本来の Glow。<br>
+        8つの質問で、あなただけの輝きタイプを見つけましょう。
+      </p>
+      <p class="hero-meta">所要時間 約3分 ／ 全8問</p>
+      <button class="btn-start" onclick="startQuiz()">
+        診断をはじめる
+        <div class="btn-arrow"></div>
+      </button>
+    </div>
+    <div class="brand-footer">さき｜Glow Up Academy</div>
+  </div>
+
+  <!-- ══ 質問画面 ══ -->
+  <div id="screen-quiz" class="screen">
+    <div class="progress-wrap">
+      <div class="progress-label" id="progress-label">1 / 8</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:12.5%"></div>
+      </div>
+    </div>
+    <div class="q-card" id="q-card"></div>
+  </div>
+
+  <!-- ══ 結果画面 ══ -->
+  <div id="screen-result" class="screen">
+    <div class="result-hero">
+      <div class="result-eyebrow">Your Glow Type</div>
+      <div class="result-type-label" id="result-type-label"></div>
+      <div class="result-name" id="result-name"></div>
+      <div class="result-keywords" id="result-keywords"></div>
+      <div class="result-divider">
+        <div class="result-divider-bar"></div>
+        <div class="result-divider-dot"></div>
+        <div class="result-divider-bar r"></div>
+      </div>
+    </div>
+
+    <div class="result-section">
+      <div class="result-section-title">About You</div>
+      <div class="result-section-text" id="result-desc"></div>
+    </div>
+
+    <div class="result-section">
+      <div class="result-section-title">Your Strength</div>
+      <div class="result-section-text" id="result-strength"></div>
+    </div>
+
+    <div class="result-section">
+      <div class="result-section-title">Session で得られること</div>
+      <div class="result-section-text" id="result-session"></div>
+    </div>
+
+    <div class="result-cta">
+      <div class="result-cta-title">
+        あなたの Glow を、もっと深く。
+      </div>
+      <div class="result-cta-desc">
+        「私らしい人生デザインセッション」では、<br>
+        あなたのタイプに合わせた自分軸を一緒に作ります。
+      </div>
+      <a class="btn-line" href="https://lin.ee/XXXXXXX" target="_blank">
+        LINEでセッションを予約する
+        <div class="btn-arrow"></div>
+      </a>
+    </div>
+
+    <button class="btn-retry" onclick="retryQuiz()">もう一度診断する — Retry</button>
+    <div class="brand-footer">さき｜Glow Up Academy</div>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    text: "休日の理想の過ごし方は？",
+    options: [
+      { text: "行きたい場所や叶えたい夢のリストを作って、次の計画を立てる", type: "A" },
+      { text: "大切な人と一緒にゆっくり過ごし、相手の話をじっくり聴く", type: "B" },
+      { text: "好きなものを作ったり、気になることを自由に探求する", type: "C" },
+      { text: "目標に向けて行動したり、新しいことに挑戦してみる", type: "D" },
+    ]
+  },
+  {
+    text: "友人から「あなたってどんな人？」と聞かれたら、どれが近い？",
+    options: [
+      { text: "夢や理想をいつも語っていて、前向きな人", type: "A" },
+      { text: "話を聞いてくれる、温かくて頼りになる人", type: "B" },
+      { text: "個性的でセンスがあって、独特の世界観がある人", type: "C" },
+      { text: "行動力があって、何でもテキパキこなす人", type: "D" },
+    ]
+  },
+  {
+    text: "「自分らしく働く」と聞いて、まず思い浮かぶのは？",
+    options: [
+      { text: "自分のビジョンや理想の未来に向かって働くこと", type: "A" },
+      { text: "誰かの役に立ちながら、感謝される仕事をすること", type: "B" },
+      { text: "自分の感性やアイデアを活かせる仕事をすること", type: "C" },
+      { text: "自分のペースで主体的に動ける環境で働くこと", type: "D" },
+    ]
+  },
+  {
+    text: "新しいことを始めるとき、あなたはどのタイプ？",
+    options: [
+      { text: "「こうなりたい」という理想のゴールを描いてから動く", type: "A" },
+      { text: "周りの人と相談しながら、一緒に進めたい", type: "B" },
+      { text: "自分なりのやり方を探しながら、少しずつ試してみる", type: "C" },
+      { text: "とにかく動いてみて、やりながら修正する", type: "D" },
+    ]
+  },
+  {
+    text: "人生でいちばん大切にしたい価値観は？",
+    options: [
+      { text: "理想・自由・可能性", type: "A" },
+      { text: "つながり・温かさ・貢献", type: "B" },
+      { text: "個性・表現・創造", type: "C" },
+      { text: "挑戦・成長・自立", type: "D" },
+    ]
+  },
+  {
+    text: "自分に自信が持てないとき、どんなことで悩む？",
+    options: [
+      { text: "「理想は高いのに、なかなか現実が追いつかない」", type: "A" },
+      { text: "「いつも人のことを優先して、自分の気持ちを後回しにしてしまう」", type: "B" },
+      { text: "「自分のやり方や感性が、他人に受け入れてもらえるか不安」", type: "C" },
+      { text: "「完璧にできないなら、やらない方がいいかもと思ってしまう」", type: "D" },
+    ]
+  },
+  {
+    text: "50代以降の人生で、いちばんやってみたいことは？",
+    options: [
+      { text: "ずっと描いてきた夢や理想を、本気で実現させたい", type: "A" },
+      { text: "誰かの人生に寄り添い、支える仕事や活動をしたい", type: "B" },
+      { text: "自分の感性や経験を活かして、何かを表現・発信したい", type: "C" },
+      { text: "新しいことに挑戦して、可能性を広げていきたい", type: "D" },
+    ]
+  },
+  {
+    text: "セッションや学びの場で、いちばん求めるものは？",
+    options: [
+      { text: "理想の未来を明確にして、そこへの道筋を描くこと", type: "A" },
+      { text: "自分の気持ちをじっくり聞いてもらい、整理すること", type: "B" },
+      { text: "自分の個性や才能を発見して、言語化してもらうこと", type: "C" },
+      { text: "具体的な行動プランを作って、すぐに動けるようになること", type: "D" },
+    ]
+  },
+];
+
+const types = {
+  A: {
+    label: "Type A",
+    name: "ビジョン・グロー",
+    keywords: "理想を描く輝き",
+    desc: "未来への大きなビジョンを持ち、自分の理想の人生を描くことが得意なタイプ。直感が鋭く、「こうありたい」という強い想いがあります。ただ、具体的な一歩をどう踏み出すかで迷いやすい傾向も。",
+    strength: "理想を描く力・ビジョン思考・直感力",
+    session: "「やりたいこと」を「できること」に変換し、あなたのビジョンを現実にする自分軸を一緒に作ります。"
+  },
+  B: {
+    label: "Type B",
+    name: "ナーチャー・グロー",
+    keywords: "人を育てる輝き",
+    desc: "人の気持ちに寄り添い、サポートすることに喜びを感じるタイプ。温かく信頼される存在ですが、自分よりも他人を優先しすぎて、本来の自分の望みを後回しにしがちな面もあります。",
+    strength: "共感力・人を育てる力・温かさと誠実さ",
+    session: "他者へのケアを大切にしながら、自分自身も満たされる「私らしい働き方と生き方」を設計します。"
+  },
+  C: {
+    label: "Type C",
+    name: "クリエイティブ・グロー",
+    keywords: "表現する輝き",
+    desc: "独自の感性と表現力を持ち、何かを作り出すことに喜びを感じるタイプ。アイデアが豊富で個性的ですが、「私なんかが…」と自分の才能を過小評価しやすい傾向があります。",
+    strength: "独自の感性・創造力・新しい視点を生む力",
+    session: "あなたの個性と才能を「強み」として言語化し、それを活かせる人生のデザインを一緒に描きます。"
+  },
+  D: {
+    label: "Type D",
+    name: "リーダー・グロー",
+    keywords: "道を切り拓く輝き",
+    desc: "行動力があり、自分の信念に従って動けるタイプ。周囲を引っ張るリーダーシップを持ちますが、「こうあるべき」という思い込みや完璧主義で自分を縛ってしまうことがあります。",
+    strength: "行動力・リーダーシップ・突破力と決断力",
+    session: "完璧主義の鎧を脱ぎ、あなたらしいリーダーシップで自由に輝く人生軸を作ります。"
+  }
+};
+
+let currentQ = 0;
+let scores = { A: 0, B: 0, C: 0, D: 0 };
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startQuiz() {
+  currentQ = 0;
+  scores = { A: 0, B: 0, C: 0, D: 0 };
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const total = questions.length;
+  const pct = ((currentQ + 1) / total * 100).toFixed(1);
+
+  document.getElementById('progress-label').textContent = `${currentQ + 1} / ${total}`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  const optLabels = ['A', 'B', 'C', 'D'];
+  const html = `
+    <div class="q-number">Question ${String(currentQ + 1).padStart(2, '0')}</div>
+    <div class="q-text">${q.text}</div>
+    <div class="options">
+      ${q.options.map((opt, i) => `
+        <div class="option" onclick="selectOption('${opt.type}', this)">
+          <div class="option-label">${optLabels[i]}</div>
+          <div class="option-text">${opt.text}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  const card = document.getElementById('q-card');
+  card.innerHTML = html;
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'fadeIn 0.5s ease';
+}
+
+function selectOption(type, el) {
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+
+  setTimeout(() => {
+    scores[type]++;
+    currentQ++;
+    if (currentQ < questions.length) {
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }, 420);
+}
+
+function showResult() {
+  const topType = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  const t = types[topType];
+
+  document.getElementById('result-type-label').textContent = t.label;
+  document.getElementById('result-name').textContent = t.name;
+  document.getElementById('result-keywords').textContent = t.keywords;
+  document.getElementById('result-desc').innerHTML = t.desc;
+  document.getElementById('result-strength').innerHTML = `<em>${t.strength}</em>`;
+  document.getElementById('result-session').innerHTML = t.session;
+
+  showScreen('screen-result');
+}
+
+function retryQuiz() {
+  startQuiz();
+}
+</script>
+</body>
+</html>
